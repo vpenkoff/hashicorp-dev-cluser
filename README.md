@@ -16,7 +16,7 @@ Here's a list of the plays that this playbook runs:
  - init: updates the operating system and installs *dnsmasq* and *unzip*
  - docker: installs docker runtime
  - consul: installs and setup the Hashicorp's Consul
- - dnsmasq: setup dnsmasq as reverse DNS for Consul
+ - dnsmasq: setup dnsmasq as forward DNS proxy for Consul
  - nomad: installs and setup Hashicorp's Nomad
 
 ## How to run
