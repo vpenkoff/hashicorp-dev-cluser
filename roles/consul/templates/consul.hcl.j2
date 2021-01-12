@@ -1,0 +1,5 @@
+datacenter = "dc1"
+data_dir = "/opt/consul"
+encrypt = "{{ encryption_key.stdout_lines[0] }}"
+retry_join = ["{{ ip_addr.stdout_lines[0] }}"]
+bind_addr = "{{ ip_addr.stdout_lines[0] }}"

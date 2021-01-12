@@ -1,0 +1,16 @@
+---
+- name: update cache
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: upgrade system
+  become: yes
+  apt:
+    upgrade: yes
+
+- name: install unzip and dnsmasq
+  become: yes
+  apt:
+    name: unzip, dnsmasq
+    state: present

@@ -1,0 +1,10 @@
+---
+
+- hosts: cluster
+  remote_user: admin
+  roles:
+    - init
+    - docker
+    - consul
+    - dnsmasq
+    - nomad

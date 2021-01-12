@@ -1,0 +1,114 @@
+---
+- name: download nomad
+  get_url:
+    url: "https://releases.hashicorp.com/nomad/1.0.1/nomad_1.0.1_linux_amd64.zip"
+    dest: "/tmp"
+
+- name: unzip nomad
+  shell:
+    cmd: unzip nomad_1.0.1_linux_amd64.zip
+    chdir: /tmp
+
+- name: chown nomad to root
+  become: true
+  shell:
+    cmd: chown root:root nomad
+    chdir: /tmp
+
+- name: move nomad to /usr/local/bin
+  become: true
+  shell:
+    cmd: mv nomad /usr/local/bin
+    chdir: /tmp
+
+- name: create nomad data dir
+  become: true
+  file:
+    path: /opt/nomad
+    state: directory
+    recurse: yes
+
+- name: create nomad systemd
+  become: true
+  template:
+    src: systemd.service.j2
+    dest: /usr/lib/systemd/system/nomad.service
+
+- name: create nomad.d
+  become: true
+  file:
+    path: /etc/nomad.d
+    state: directory
+    recurse: yes
+    mode: "700"
+
+- name: create nomad common config
+  become: true
+  template:
+    src: nomad.hcl.j2
+    dest: /etc/nomad.d/nomad.hcl
+
+- name: create nomad server config
+  become: true
+  template:
+    src: server.hcl.j2
+    dest: /etc/nomad.d/server.hcl
+
+- name: create nomad client config
+  become: true
+  template:
+    src: client.hcl.j2
+    dest: /etc/nomad.d/client.hcl
+
+- name: enable nomad systemd
+  become: true
+  systemd:
+    name: nomad
+    enabled: yes
+    masked: no
+
+- name: start nomad systemd
+  become: true
+  systemd:
+    name: nomad
+    state: started
+
+- name: boostrap nomad acl
+  shell: nomad acl bootstrap
+  register: nomad_acl_bootstrap
+
+- name: write nomad acl bootstrap
+  delegate_to: localhost
+  copy:
+    content: "{{nomad_acl_bootstrap.stdout}}"
+    dest: "/tmp/nomad.out"
+
+- name: get nomad mngmt token
+  delegate_to: localhost
+  shell: cat /tmp/nomad.out | grep "Secret ID" | cut -w -f 4
+  register: nomad_mngmt_token
+
+- name: upload developer policy
+  become: true
+  template:
+    src: developer.policy.j2
+    dest: /etc/nomad.d/developer.policy
+
+- name: add developer policy
+  become: true
+  shell: nomad acl policy apply -description="Developer policy" dev-policy /etc/nomad.d/developer.policy
+  environment:
+    NOMAD_TOKEN: "{{ nomad_mngmt_token.stdout }}"
+
+- name: attach policy to dev token
+  become: true
+  shell: nomad acl token create -name="Developer token" -policy="dev-policy" -type=client
+  environment:
+    NOMAD_TOKEN: "{{ nomad_mngmt_token.stdout }}"
+  register: developer_acl_token
+
+- name: write developer acl token
+  delegate_to: localhost
+  copy:
+    content: "{{developer_acl_token.stdout}}"
+    dest: "/tmp/dev.out"

@@ -1,0 +1,12 @@
+---
+- name: add consul config to dnsmasq
+  become: true
+  template:
+    src: consul.j2
+    dest: /etc/dnsmasq.d/10-consul
+
+- name: restart dnsmasq
+  become: true
+  systemd:
+    name: dnsmasq
+    state: restarted

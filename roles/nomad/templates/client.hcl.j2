@@ -1,0 +1,23 @@
+bind_addr = "0.0.0.0"
+
+client {
+  enabled = true
+}
+
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
+
+plugin "docker" {
+  config {
+    volumes {
+      enabled = true
+    }
+  }
+}
+
+acl {
+  enabled = true
+}

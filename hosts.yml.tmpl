@@ -1,0 +1,7 @@
+cluster:
+  hosts:
+    1.1.1.1
+  vars:
+    ansible_ssh_private_key_file: "aws.pem"
+    ansible_ssh_extra_args: "-Jump host"
+    ansible_user: "ansible"

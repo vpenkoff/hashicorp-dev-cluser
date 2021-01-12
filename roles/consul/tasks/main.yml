@@ -1,0 +1,89 @@
+---
+- name: download consul
+  get_url:
+    url: "https://releases.hashicorp.com/consul/1.9.1/consul_1.9.1_linux_amd64.zip"
+    dest: "/tmp"
+
+- name: unzip consul
+  shell:
+    cmd: unzip consul_1.9.1_linux_amd64.zip
+    chdir: /tmp
+
+- name: chown consul to root
+  become: true
+  shell:
+    cmd: chown root:root consul
+    chdir: /tmp
+
+- name: move consul to /usr/local/bin
+  become: true
+  shell:
+    cmd: mv consul /usr/local/bin
+    chdir: /tmp
+
+- name: create consul user
+  become: true
+  user:
+    name: consul
+    system: yes
+    home: /etc/consul.d
+    shell: /bin/false
+
+- name: create consul data dir
+  become: true
+  file:
+    path: /opt/consul
+    state: directory
+    recurse: yes
+    owner: consul
+
+- name: generate consul gossip key
+  shell: consul keygen
+  register: encryption_key
+
+- name: get ip addr
+  shell: ip address show eth0 | grep -E 'inet\s+' | awk '{print $2}' | sed 's/\/[0-9]\+//'
+  register: ip_addr
+
+- name: create consul.d
+  become: true
+  file:
+    path: /etc/consul.d
+    state: directory
+    recurse: yes
+    owner: consul
+
+- name: create consul client config
+  become: true
+  template:
+    src: consul.hcl.j2
+    dest: /etc/consul.d/consul.hcl
+    mode: "640"
+    owner: consul
+
+- name: create consul server config
+  become: true
+  template:
+    src: server.hcl.j2
+    dest: /etc/consul.d/server.hcl
+    mode: "640"
+    owner: consul
+
+- name: create consul systemd
+  become: true
+  template:
+    src: systemd.service.j2
+    dest: /usr/lib/systemd/system/consul.service
+
+- name: enable consul systemd
+  become: true
+  systemd:
+    name: consul
+    enabled: yes
+    masked: no
+
+- name: start consul systemd
+  become: true
+  systemd:
+    name: consul
+    state: started
